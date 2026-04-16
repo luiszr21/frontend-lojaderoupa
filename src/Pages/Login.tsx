@@ -74,15 +74,6 @@ export default function Login() {
               e manter seu fluxo de vendas organizado.
             </p>
           </div>
-
-          <div className="space-y-3 text-sm text-slate-300">
-            <p className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3">
-              Login seguro com token e perfil por papel.
-            </p>
-            <p className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3">
-              Navegacao otimizada para desktop e mobile.
-            </p>
-          </div>
         </aside>
 
         <section className="flex items-center p-6 sm:p-8 md:p-10">

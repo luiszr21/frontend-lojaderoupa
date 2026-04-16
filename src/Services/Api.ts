@@ -7,11 +7,40 @@ export const api = axios.create({
   baseURL: "http://localhost:3001"
 });
 
+function extrairPath(url?: string): string {
+  if (!url) {
+    return "";
+  }
+
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    try {
+      return new URL(url).pathname;
+    } catch {
+      return url;
+    }
+  }
+
+  return url;
+}
+
+function ehRotaPublica(url?: string): boolean {
+  const path = extrairPath(url);
+
+  return (
+    path.startsWith("/produtos") ||
+    path.startsWith("/auth/") ||
+    path === "/login" ||
+    path === "/cadastro"
+  );
+}
+
 api.interceptors.request.use(config => {
   const token = localStorage.getItem("token");
 
-  if (token) {
+  if (token && !ehRotaPublica(config.url)) {
     config.headers.Authorization = `Bearer ${token}`;
+  } else if (config.headers?.Authorization) {
+    delete config.headers.Authorization;
   }
 
   return config;
