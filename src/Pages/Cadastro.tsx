@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { postAuth } from "../Services/Api";
+import { postAuth } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
 export default function Cadastro() {
@@ -11,12 +11,13 @@ export default function Cadastro() {
 
   const navigate = useNavigate();
 
-  async function handleCadastro(e: React.FormEvent) {
+  async function handleCadastro(e) {
     e.preventDefault();
     setErro("");
 
+    // validação senha
     if (senha !== confirmacaoSenha) {
-      setErro("A confirmacao de senha precisa ser igual a senha.");
+      setErro("A confirmação de senha precisa ser igual à senha.");
       return;
     }
 
@@ -26,26 +27,38 @@ export default function Cadastro() {
     }
 
     const valor = identificador.trim();
+
     if (!valor) {
-      setErro("Informe login ou email.");
+      setErro("Informe um email.");
       return;
     }
 
-    setIsLoading(true);
+    // 🚨 FORÇANDO uso de email (evita erro com backend)
+    if (!valor.includes("@")) {
+      setErro("Informe um email válido.");
+      return;
+    }
 
-    const isEmail = valor.includes("@");
-    const nomeBase = isEmail ? valor.split("@")[0] || valor : valor;
+    const nomeBase = valor.split("@")[0];
+
+    setIsLoading(true);
 
     try {
       await postAuth("/cadastro", {
         nome: nomeBase,
+        email: valor,
         senha,
-        ...(isEmail ? { email: valor } : { login: valor }),
       });
 
       navigate("/login");
-    } catch {
-      setErro("Erro ao cadastrar. Verifique os dados e tente novamente.");
+    } catch (error) {
+      // 🔥 tratamento real do erro
+      const mensagem =
+        error?.response?.data?.erro ||
+        error?.response?.data?.message ||
+        "Erro ao cadastrar. Tente novamente.";
+
+      setErro(mensagem);
     } finally {
       setIsLoading(false);
     }
@@ -63,113 +76,57 @@ export default function Cadastro() {
               Front Roupas
             </p>
             <h1 className="mt-5 text-4xl font-black leading-tight">
-              Crie sua conta e inicie suas negociacoes.
+              Crie sua conta e inicie suas negociações.
             </h1>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-300">
-              Cadastro rapido, direto ao ponto e pronto para uso em desktop e
-              mobile.
-            </p>
-          </div>
-
-          <div className="space-y-3 text-sm text-slate-300">
-            <p className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3">
-              Use login ou email para cadastrar seu acesso.
-            </p>
-            <p className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3">
-              Confirmacao de senha para reduzir erros de digitacao.
-            </p>
           </div>
         </aside>
 
         <section className="flex items-center p-6 sm:p-8 md:p-10">
-          <div className="w-full animate-[fadeIn_.45s_ease-out]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Cadastro
-            </p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+          <div className="w-full">
+            <h2 className="text-3xl font-black text-slate-900">
               Criar conta
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Preencha os dados para criar seu acesso.
-            </p>
 
             <form onSubmit={handleCadastro} className="mt-7 space-y-4">
-              <div>
-                <label
-                  htmlFor="identificador"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Login ou email
-                </label>
-                <input
-                  id="identificador"
-                  type="text"
-                  required
-                  value={identificador}
-                  onChange={(e) => setIdentificador(e.target.value)}
-                  className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-                  placeholder="seu_login ou voce@exemplo.com"
-                />
-              </div>
+              <input
+                type="text"
+                required
+                value={identificador}
+                onChange={(e) => setIdentificador(e.target.value)}
+                placeholder="email@exemplo.com"
+                className="h-12 w-full rounded-xl border px-4"
+              />
 
-              <div>
-                <label htmlFor="senha" className="mb-2 block text-sm font-medium text-slate-700">
-                  Senha
-                </label>
-                <input
-                  id="senha"
-                  type="password"
-                  required
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-                  placeholder="Minimo de 6 caracteres"
-                />
-              </div>
+              <input
+                type="password"
+                required
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="Senha"
+                className="h-12 w-full rounded-xl border px-4"
+              />
 
-              <div>
-                <label
-                  htmlFor="confirmacaoSenha"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Confirmacao de senha
-                </label>
-                <input
-                  id="confirmacaoSenha"
-                  type="password"
-                  required
-                  value={confirmacaoSenha}
-                  onChange={(e) => setConfirmacaoSenha(e.target.value)}
-                  className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-                  placeholder="Repita sua senha"
-                />
-              </div>
+              <input
+                type="password"
+                required
+                value={confirmacaoSenha}
+                onChange={(e) => setConfirmacaoSenha(e.target.value)}
+                placeholder="Confirmar senha"
+                className="h-12 w-full rounded-xl border px-4"
+              />
 
-              {erro ? (
-                <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                  {erro}
-                </p>
-              ) : null}
+              {erro && (
+                <p className="text-red-500 text-sm">{erro}</p>
+              )}
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="h-12 w-full rounded-xl bg-slate-900 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-12 w-full bg-black text-white rounded-xl"
               >
                 {isLoading ? "Cadastrando..." : "Criar conta"}
               </button>
             </form>
-
-            <p className="mt-6 text-center text-sm text-slate-600">
-              Ja possui conta?{" "}
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="font-semibold text-cyan-700 transition hover:text-cyan-600"
-              >
-                Entrar
-              </button>
-            </p>
           </div>
         </section>
       </div>

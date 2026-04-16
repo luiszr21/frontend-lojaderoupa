@@ -6,6 +6,8 @@ export interface Produto {
   descricao: string | null;
   preco: number;
   imagemUrl: string | null;
+  avaliacao?: number | null;
+  criadoEm?: string | null;
 }
 
 export type ListarProdutosResponse = Produto[];
