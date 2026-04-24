@@ -1,19 +1,35 @@
 import { useState } from "react";
-import { postAuth } from "../services/api";
+import axios from "axios";
+import { postAuth } from "../Services/Api";
 import { useNavigate } from "react-router-dom";
 
+interface ApiErrorResponse {
+  erro?: string;
+  campos?: Record<string, string>;
+}
+
 export default function Cadastro() {
+  const [nomeUsuario, setNomeUsuario] = useState("");
   const [identificador, setIdentificador] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmacaoSenha, setConfirmacaoSenha] = useState("");
   const [erro, setErro] = useState("");
+  const [errosCampo, setErrosCampo] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  async function handleCadastro(e) {
+  async function handleCadastro(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
+    setErrosCampo({});
+
+    const nome = nomeUsuario.trim();
+
+    if (!nome) {
+      setErro("Informe um nome de usuário.");
+      return;
+    }
 
     // validação senha
     if (senha !== confirmacaoSenha) {
@@ -39,26 +55,29 @@ export default function Cadastro() {
       return;
     }
 
-    const nomeBase = valor.split("@")[0];
-
     setIsLoading(true);
 
     try {
       await postAuth("/cadastro", {
-        nome: nomeBase,
+        nome,
         email: valor,
         senha,
       });
 
       navigate("/login");
-    } catch (error) {
-      // 🔥 tratamento real do erro
-      const mensagem =
-        error?.response?.data?.erro ||
-        error?.response?.data?.message ||
-        "Erro ao cadastrar. Tente novamente.";
+    } catch (error: unknown) {
+      if (axios.isAxiosError<ApiErrorResponse>(error)) {
+        const mensagem = error.response?.data?.erro;
+        const campos = error.response?.data?.campos;
 
-      setErro(mensagem);
+        if (campos) {
+          setErrosCampo(campos);
+        }
+
+        setErro(mensagem ?? "Erro ao cadastrar. Tente novamente.");
+      } else {
+        setErro("Erro ao cadastrar. Tente novamente.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -91,11 +110,26 @@ export default function Cadastro() {
               <input
                 type="text"
                 required
+                value={nomeUsuario}
+                onChange={(e) => setNomeUsuario(e.target.value)}
+                placeholder="Nome de usuário"
+                className="h-12 w-full rounded-xl border px-4"
+              />
+              {errosCampo.nome ? (
+                <p className="text-red-500 text-sm">{errosCampo.nome}</p>
+              ) : null}
+
+              <input
+                type="text"
+                required
                 value={identificador}
                 onChange={(e) => setIdentificador(e.target.value)}
                 placeholder="email@exemplo.com"
                 className="h-12 w-full rounded-xl border px-4"
               />
+              {errosCampo.email ? (
+                <p className="text-red-500 text-sm">{errosCampo.email}</p>
+              ) : null}
 
               <input
                 type="password"
@@ -105,6 +139,9 @@ export default function Cadastro() {
                 placeholder="Senha"
                 className="h-12 w-full rounded-xl border px-4"
               />
+              {errosCampo.senha ? (
+                <p className="text-red-500 text-sm">{errosCampo.senha}</p>
+              ) : null}
 
               <input
                 type="password"

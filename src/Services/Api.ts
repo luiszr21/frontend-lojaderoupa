@@ -2,6 +2,7 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
 } from "axios";
+import { useAuthStore } from "../stores/authStore";
 
 export const api = axios.create({
   baseURL: "http://localhost:3001"
@@ -28,7 +29,9 @@ function ehRotaPublica(url?: string): boolean {
 
   return (
     path.startsWith("/produtos") ||
-    path.startsWith("/auth/") ||
+    path === "/auth/login" ||
+    path === "/auth/admin/login" ||
+    path === "/auth/cadastro" ||
     path === "/login" ||
     path === "/cadastro"
   );
@@ -45,6 +48,32 @@ api.interceptors.request.use(config => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (!axios.isAxiosError(error)) {
+      return Promise.reject(error);
+    }
+
+    const status = error.response?.status;
+    const url = error.config?.url;
+    const ehProtegida = !ehRotaPublica(url);
+
+    if (status === 401 && ehProtegida) {
+      useAuthStore.getState().logout();
+
+      const pathAtual = window.location.pathname;
+      const rotaAuth = pathAtual === "/login" || pathAtual === "/cadastro";
+
+      if (!rotaAuth) {
+        window.location.assign("/login");
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 function normalizarPath(path: string): string {
   return path.startsWith("/") ? path : `/${path}`;
