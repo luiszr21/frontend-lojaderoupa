@@ -1,23 +1,33 @@
 import { useState } from "react";
+import axios from "axios";
 import { postAuth } from "../Services/Api";
 import { useAuthStore } from "../stores/authStore";
 import { useNavigate } from "react-router-dom";
 
+type Role = "user" | "admin";
+
 interface LoginApiResponse {
   token: string;
-  usuario?: {
+  user?: {
     id: string;
+    role: Role;
+    nome?: string;
+    email?: string;
   };
-  admin?: {
-    id: string;
-  };
+}
+
+interface ApiErrorResponse {
+  erro?: string;
+  campos?: Record<string, string>;
 }
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [tipoAcesso, setTipoAcesso] = useState<Role>("user");
   const [isLoading, setIsLoading] = useState(false);
   const [erro, setErro] = useState("");
+  const [errosCampo, setErrosCampo] = useState<Record<string, string>>({});
 
   const loginStore = useAuthStore();
   const navigate = useNavigate();
@@ -25,31 +35,45 @@ export default function Login() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
+    setErrosCampo({});
     setIsLoading(true);
 
     try {
-      const res = await postAuth<LoginApiResponse>("/login", { email, senha });
+      const endpoint = tipoAcesso === "admin" ? "/admin/login" : "/login";
+      const res = await postAuth<LoginApiResponse>(endpoint, { email, senha });
       const data = res.data;
 
-      if (data.usuario) {
-        loginStore.login({
-          token: data.token,
-          role: "user",
-          userId: data.usuario.id
-        });
-        navigate("/");
+      const role = data.user?.role;
+      const userId = data.user?.id;
+
+      if (!data.token || !userId) {
+        throw new Error("Resposta de login incompleta.");
       }
 
-      if (data.admin) {
-        loginStore.login({
-          token: data.token,
-          role: "admin",
-          userId: data.admin.id
-        });
-        navigate("/admin");
+      if (!role) {
+        throw new Error("Resposta de login sem role.");
       }
-    } catch {
-      setErro("Email ou senha invalidos.");
+
+      loginStore.login({
+        token: data.token,
+        role,
+        userId,
+      });
+
+      navigate(role === "admin" ? "/admin" : "/cliente");
+    } catch (error: unknown) {
+      if (axios.isAxiosError<ApiErrorResponse>(error)) {
+        const mensagem = error.response?.data?.erro;
+        const campos = error.response?.data?.campos;
+
+        if (campos) {
+          setErrosCampo(campos);
+        }
+
+        setErro(mensagem ?? "Email ou senha invalidos.");
+      } else {
+        setErro("Nao foi possivel fazer login.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -90,6 +114,32 @@ export default function Login() {
 
             <form onSubmit={handleLogin} className="mt-7 space-y-4">
               <div>
+                <p className="mb-2 block text-sm font-medium text-slate-700">Tipo de acesso</p>
+                <div className="flex items-center gap-3">
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="radio"
+                      name="tipoAcesso"
+                      value="user"
+                      checked={tipoAcesso === "user"}
+                      onChange={() => setTipoAcesso("user")}
+                    />
+                    Cliente
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="radio"
+                      name="tipoAcesso"
+                      value="admin"
+                      checked={tipoAcesso === "admin"}
+                      onChange={() => setTipoAcesso("admin")}
+                    />
+                    Admin
+                  </label>
+                </div>
+              </div>
+
+              <div>
                 <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
                   Email
                 </label>
@@ -102,6 +152,9 @@ export default function Login() {
                   className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                   placeholder="voce@exemplo.com"
                 />
+                {errosCampo.email ? (
+                  <p className="mt-1 text-sm text-rose-700">{errosCampo.email}</p>
+                ) : null}
               </div>
 
               <div>
@@ -117,6 +170,9 @@ export default function Login() {
                   className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                   placeholder="Sua senha"
                 />
+                {errosCampo.senha ? (
+                  <p className="mt-1 text-sm text-rose-700">{errosCampo.senha}</p>
+                ) : null}
               </div>
 
               {erro ? (

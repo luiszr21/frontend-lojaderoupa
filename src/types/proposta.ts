@@ -4,7 +4,8 @@ export type StatusProposta =
   | "pendente"
   | "respondida"
   | "aceita"
-  | "rejeitada";
+  | "rejeitada"
+  | "cancelada";
 
 export interface Proposta {
   id: UUID;
