@@ -1,15 +1,15 @@
-import { useState } from "react";
+﻿import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { postAuth } from "../Services/Api";
 import { useAuthStore } from "../stores/authStore";
-import { useNavigate } from "react-router-dom";
 
 interface LoginApiResponse {
   token: string;
-  usuario?: {
+  user: {
     id: string;
-  };
-  admin?: {
-    id: string;
+    nome: string;
+    email: string;
+    tipo: "cliente" | "admin";
   };
 }
 
@@ -19,37 +19,32 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [erro, setErro] = useState("");
 
-  const loginStore = useAuthStore();
+  const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setErro("");
     setIsLoading(true);
 
     try {
-      const res = await postAuth<LoginApiResponse>("/login", { email, senha });
-      const data = res.data;
+      const response = await postAuth<LoginApiResponse>("/login", {
+        email,
+        senha,
+      });
 
-      if (data.usuario) {
-        loginStore.login({
-          token: data.token,
-          role: "user",
-          userId: data.usuario.id
-        });
-        navigate("/");
-      }
+      const { token, user } = response.data;
+      const role = user.tipo === "admin" ? "admin" : "user";
 
-      if (data.admin) {
-        loginStore.login({
-          token: data.token,
-          role: "admin",
-          userId: data.admin.id
-        });
-        navigate("/admin");
-      }
+      login({
+        token,
+        role,
+        userId: user.id,
+      });
+
+      navigate(role === "admin" ? "/admin" : "/", { replace: true });
     } catch {
-      setErro("Email ou senha invalidos.");
+      setErro("Email ou senha inválidos.");
     } finally {
       setIsLoading(false);
     }
@@ -70,8 +65,7 @@ export default function Login() {
               Entre e acompanhe propostas em tempo real.
             </h1>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-300">
-              Um painel limpo para voce negociar produtos, visualizar interacoes
-              e manter seu fluxo de vendas organizado.
+              Um painel limpo para negociar produtos, visualizar interações e manter seu fluxo organizado.
             </p>
           </div>
         </aside>
@@ -90,7 +84,10 @@ export default function Login() {
 
             <form onSubmit={handleLogin} className="mt-7 space-y-4">
               <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="email"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
                   Email
                 </label>
                 <input
@@ -105,7 +102,10 @@ export default function Login() {
               </div>
 
               <div>
-                <label htmlFor="senha" className="mb-2 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="senha"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
                   Senha
                 </label>
                 <input

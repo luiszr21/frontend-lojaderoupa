@@ -1,6 +1,12 @@
 import { useState } from "react";
-import { postAuth } from "../services/api";
+import { postAuth } from "../Services/Api";
 import { useNavigate } from "react-router-dom";
+
+interface RequisitoDeSenha {
+  id: string;
+  descricao: string;
+  validado: boolean;
+}
 
 export default function Cadastro() {
   const [identificador, setIdentificador] = useState("");
@@ -8,8 +14,42 @@ export default function Cadastro() {
   const [confirmacaoSenha, setConfirmacaoSenha] = useState("");
   const [erro, setErro] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [senhaRequisitos, setSenhaRequisitos] = useState<RequisitoDeSenha[]>([]);
 
   const navigate = useNavigate();
+
+  // Validar requisitos da senha em tempo real
+  const validarRequisitos = (senhaDigitada: string) => {
+    const requisitos: RequisitoDeSenha[] = [
+      {
+        id: "minimo6",
+        descricao: "Mínimo de 6 caracteres",
+        validado: senhaDigitada.length >= 6,
+      },
+      {
+        id: "maiuscula",
+        descricao: "Pelo menos uma letra maiúscula",
+        validado: /[A-Z]/.test(senhaDigitada),
+      },
+      {
+        id: "minuscula",
+        descricao: "Pelo menos uma letra minúscula",
+        validado: /[a-z]/.test(senhaDigitada),
+      },
+      {
+        id: "numero",
+        descricao: "Pelo menos um número",
+        validado: /[0-9]/.test(senhaDigitada),
+      },
+      {
+        id: "especial",
+        descricao: "Pelo menos um caractere especial (!@#$%^&*)",
+        validado: /[!@#$%^&*]/.test(senhaDigitada),
+      },
+    ];
+
+    setSenhaRequisitos(requisitos);
+  };
 
   async function handleCadastro(e) {
     e.preventDefault();
@@ -51,8 +91,19 @@ export default function Cadastro() {
       });
 
       navigate("/login");
-    } catch (error) {
-      // 🔥 tratamento real do erro
+    } catch (error: any) {
+      // 🔥 Capturar senhaRequisitos do backend se disponível
+      if (error?.response?.data?.senhaRequisitos) {
+        const requisitosDoBackend = error.response.data.senhaRequisitos.map(
+          (req: any) => ({
+            id: req.id || req,
+            descricao: req.descricao || req,
+            validado: false,
+          })
+        );
+        setSenhaRequisitos(requisitosDoBackend);
+      }
+
       const mensagem =
         error?.response?.data?.erro ||
         error?.response?.data?.message ||
@@ -101,10 +152,39 @@ export default function Cadastro() {
                 type="password"
                 required
                 value={senha}
-                onChange={(e) => setSenha(e.target.value)}
+                onChange={(e) => {
+                  setSenha(e.target.value);
+                  validarRequisitos(e.target.value);
+                }}
                 placeholder="Senha"
                 className="h-12 w-full rounded-xl border px-4"
               />
+
+              {senhaRequisitos.length > 0 && (
+                <div className="space-y-2 rounded-lg bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-700">
+                    Requisitos da senha:
+                  </p>
+                  {senhaRequisitos.map((req) => (
+                    <div key={req.id} className="flex items-center gap-2">
+                      <span
+                        className={`text-lg font-bold ${
+                          req.validado ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {req.validado ? "✓" : "✗"}
+                      </span>
+                      <span
+                        className={`text-sm ${
+                          req.validado ? "text-green-700" : "text-red-700"
+                        }`}
+                      >
+                        {req.descricao}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <input
                 type="password"
@@ -125,6 +205,14 @@ export default function Cadastro() {
                 className="h-12 w-full bg-black text-white rounded-xl"
               >
                 {isLoading ? "Cadastrando..." : "Criar conta"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="w-full rounded-xl text-slate-700 transition duration-200 hover:text-blue-600"
+              >
+                Já tenho conta, voltar ao login
               </button>
             </form>
           </div>
