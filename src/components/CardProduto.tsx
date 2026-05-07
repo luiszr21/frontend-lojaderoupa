@@ -1,7 +1,5 @@
-import { useState } from "react";
-import type { CriarPropostaRequest, Produto } from "../types";
-import { api } from "../Services/Api";
-import { useAuthStore } from "../stores/authStore";
+import { useNavigate } from "react-router-dom";
+import type { Produto } from "../types";
 
 function formatarPreco(valor: number) {
 	return new Intl.NumberFormat("pt-BR", {
@@ -19,39 +17,11 @@ export default function CardProduto({
 	produto,
 	detalhe,
 }: CardProdutoProps) {
-	const token = useAuthStore((state) => state.token);
-	const role = useAuthStore((state) => state.role);
-	const [detalhesAbertos, setDetalhesAbertos] = useState(false);
-	const [mensagem, setMensagem] = useState("");
-	const [enviando, setEnviando] = useState(false);
-	const [feedback, setFeedback] = useState("");
+	const navigate = useNavigate();
 
-	async function enviarProposta() {
-		const texto = mensagem.trim();
-
-		if (!texto) {
-			setFeedback("Escreva sua proposta antes de enviar.");
-			return;
-		}
-
-		const payload: CriarPropostaRequest = {
-			produtoId: produto.id,
-			mensagem: texto,
-		};
-
-		setEnviando(true);
-		setFeedback("");
-
-		try {
-			await api.post("/propostas", payload);
-			setMensagem("");
-			setFeedback("Proposta enviada para o admin com sucesso.");
-		} catch {
-			setFeedback("Falha ao enviar proposta. Tente novamente.");
-		} finally {
-			setEnviando(false);
-		}
-	}
+	const handleVerDetalhes = () => {
+		navigate(`/produto/${produto.id}`);
+	};
 
 	return (
 		<article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -83,7 +53,7 @@ export default function CardProduto({
 				</p>
 				<button
 					type="button"
-					onClick={() => setDetalhesAbertos((valorAtual) => !valorAtual)}
+					onClick={handleVerDetalhes}
 					className="mt-2 inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-cyan-500"
 				>
 					{detalhesAbertos ? "Ocultar detalhes" : "Ver detalhes"}

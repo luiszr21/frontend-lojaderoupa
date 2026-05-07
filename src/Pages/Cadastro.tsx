@@ -1,7 +1,13 @@
 import { useState } from "react";
-import axios from "axios";
 import { postAuth } from "../Services/Api";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+interface RequisitoDeSenha {
+  id: string;
+  descricao: string;
+  validado: boolean;
+}
 
 interface ApiErrorResponse {
   erro?: string;
@@ -14,12 +20,48 @@ export default function Cadastro() {
   const [senha, setSenha] = useState("");
   const [confirmacaoSenha, setConfirmacaoSenha] = useState("");
   const [erro, setErro] = useState("");
-  const [errosCampo, setErrosCampo] = useState<Record<string, string>>({});
+  const [sucesso, setSucesso] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [senhaRequisitos, setSenhaRequisitos] = useState<RequisitoDeSenha[]>([]);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmacaoSenha, setMostrarConfirmacaoSenha] = useState(false);
 
   const navigate = useNavigate();
 
-  async function handleCadastro(e: React.FormEvent) {
+  // Validar requisitos da senha em tempo real
+  const validarRequisitos = (senhaDigitada: string) => {
+    const requisitos: RequisitoDeSenha[] = [
+      {
+        id: "minimo6",
+        descricao: "Mínimo de 6 caracteres",
+        validado: senhaDigitada.length >= 6,
+      },
+      {
+        id: "maiuscula",
+        descricao: "Pelo menos uma letra maiúscula",
+        validado: /[A-Z]/.test(senhaDigitada),
+      },
+      {
+        id: "minuscula",
+        descricao: "Pelo menos uma letra minúscula",
+        validado: /[a-z]/.test(senhaDigitada),
+      },
+      {
+        id: "numero",
+        descricao: "Pelo menos um número",
+        validado: /[0-9]/.test(senhaDigitada),
+      },
+      {
+        id: "especial",
+        descricao: "Pelo menos um caractere especial (!@#$%^&*)",
+        validado: /[!@#$%^&*]/.test(senhaDigitada),
+      },
+    ];
+
+    setSenhaRequisitos(requisitos);
+  };
+
+  async function handleCadastro(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErro("");
     setErrosCampo({});
@@ -31,52 +73,104 @@ export default function Cadastro() {
       return;
     }
 
-    // validação senha
+    // Validação: confirmação de senha
     if (senha !== confirmacaoSenha) {
-      setErro("A confirmação de senha precisa ser igual à senha.");
+      setErro("A confirmação de senha não corresponde à senha digitada.");
       return;
     }
 
+    // Validação: comprimento mínimo da senha
     if (senha.length < 6) {
       setErro("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
 
-    const valor = identificador.trim();
-
-    if (!valor) {
-      setErro("Informe um email.");
-      return;
-    }
-
-    // 🚨 FORÇANDO uso de email (evita erro com backend)
-    if (!valor.includes("@")) {
+    // Validação: email
+    const email = identificador.trim();
+    if (!email) {
       setErro("Informe um email válido.");
       return;
     }
+
+    if (!email.includes("@") || !email.includes(".")) {
+      setErro("Informe um email válido.");
+      return;
+    }
+
+    const nomeBase = email.split("@")[0];
 
     setIsLoading(true);
 
     try {
       await postAuth("/cadastro", {
-        nome,
-        email: valor,
+        nome: nomeBase,
+        email,
         senha,
       });
 
-      navigate("/login");
+      // ✅ Cadastro bem-sucedido
+      setSucesso("Cadastro realizado com sucesso! Redirecionando para o login...");
+      
+      // Limpar localStorage de qualquer sessão anterior
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("userId");
+
+      // Redirecionar para login após 1.5s
+      setTimeout(() => {
+        navigate("/login", { replace: true });
+      }, 1500);
     } catch (error: unknown) {
-      if (axios.isAxiosError<ApiErrorResponse>(error)) {
-        const mensagem = error.response?.data?.erro;
-        const campos = error.response?.data?.campos;
+      // Tratamento de erros seguindo boas práticas de segurança
+      if (axios.isAxiosError(error)) {
+        const statusCode = error.response?.status;
+        const responseData = error.response?.data as Record<string, unknown>;
 
-        if (campos) {
-          setErrosCampo(campos);
+        // Erros específicos do backend
+        if (statusCode === 400) {
+          // Email já registrado ou validação de entrada
+          const mensagem = responseData?.erro || responseData?.message;
+          if (typeof mensagem === "string") {
+            // Mensagens específicas do backend
+            if (mensagem.includes("email")) {
+              setErro("Este email já está registrado. Tente fazer login ou use outro email.");
+            } else if (mensagem.includes("senha")) {
+              setErro("A senha não atende aos requisitos. Verifique as exigências abaixo.");
+              // Se o backend retornar requisitos específicos, mostrar
+              if (Array.isArray(responseData?.senhaRequisitos)) {
+                const requisitosDoBackend = (responseData.senhaRequisitos as Array<string | Record<string, unknown>>).map(
+                  (req) => ({
+                    id: typeof req === "string" ? req : String(req.id ?? ""),
+                    descricao: typeof req === "string" ? req : String(req.descricao ?? ""),
+                    validado: false,
+                  })
+                );
+                setSenhaRequisitos(requisitosDoBackend);
+              }
+            } else {
+              setErro("Verifique seus dados e tente novamente.");
+            }
+          } else {
+            setErro("Verifique seus dados e tente novamente.");
+          }
+        } else if (statusCode === 409) {
+          // Conflito - email duplicado
+          setErro("Este email já está registrado. Tente fazer login ou use outro email.");
+        } else if (statusCode === 500) {
+          // Erro no servidor
+          setErro("Erro ao processar seu cadastro. Tente novamente em alguns momentos.");
+        } else if (statusCode === 0 || !statusCode) {
+          // Erro de conexão
+          setErro("Falha ao conectar ao servidor. Verifique sua conexão com a internet.");
+        } else {
+          // Outros erros HTTP
+          setErro("Não foi possível completar o cadastro. Tente novamente.");
         }
-
-        setErro(mensagem ?? "Erro ao cadastrar. Tente novamente.");
-      } else {
+      } else if (error instanceof Error) {
+        // Erro genérico
         setErro("Erro ao cadastrar. Tente novamente.");
+      } else {
+        setErro("Erro desconhecido. Tente novamente.");
       }
     } finally {
       setIsLoading(false);
@@ -131,37 +225,95 @@ export default function Cadastro() {
                 <p className="text-red-500 text-sm">{errosCampo.email}</p>
               ) : null}
 
-              <input
-                type="password"
-                required
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                placeholder="Senha"
-                className="h-12 w-full rounded-xl border px-4"
-              />
-              {errosCampo.senha ? (
-                <p className="text-red-500 text-sm">{errosCampo.senha}</p>
-              ) : null}
+              <div className="relative">
+                <input
+                  type={mostrarSenha ? "text" : "password"}
+                  required
+                  value={senha}
+                  onChange={(e) => {
+                    setSenha(e.target.value);
+                    validarRequisitos(e.target.value);
+                  }}
+                  placeholder="Senha"
+                  className="h-12 w-full rounded-xl border px-4 pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha(!mostrarSenha)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                  title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {mostrarSenha ? "👁️" : "👁️‍🗨️"}
+                </button>
+              </div>
 
-              <input
-                type="password"
-                required
-                value={confirmacaoSenha}
-                onChange={(e) => setConfirmacaoSenha(e.target.value)}
-                placeholder="Confirmar senha"
-                className="h-12 w-full rounded-xl border px-4"
-              />
+              {senhaRequisitos.length > 0 && (
+                <div className="space-y-2 rounded-lg bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-700">
+                    Requisitos da senha:
+                  </p>
+                  {senhaRequisitos.map((req) => (
+                    <div key={req.id} className="flex items-center gap-2">
+                      <span
+                        className={`text-lg font-bold ${
+                          req.validado ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {req.validado ? "✓" : "✗"}
+                      </span>
+                      <span
+                        className={`text-sm ${
+                          req.validado ? "text-green-700" : "text-red-700"
+                        }`}
+                      >
+                        {req.descricao}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="relative">
+                <input
+                  type={mostrarConfirmacaoSenha ? "text" : "password"}
+                  required
+                  value={confirmacaoSenha}
+                  onChange={(e) => setConfirmacaoSenha(e.target.value)}
+                  placeholder="Confirmar senha"
+                  className="h-12 w-full rounded-xl border px-4 pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarConfirmacaoSenha(!mostrarConfirmacaoSenha)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                  title={mostrarConfirmacaoSenha ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {mostrarConfirmacaoSenha ? "👁️" : "👁️‍🗨️"}
+                </button>
+              </div>
 
               {erro && (
                 <p className="text-red-500 text-sm">{erro}</p>
               )}
 
+              {sucesso && (
+                <p className="text-green-600 text-sm font-semibold">{sucesso}</p>
+              )}
+
               <button
                 type="submit"
-                disabled={isLoading}
-                className="h-12 w-full bg-black text-white rounded-xl"
+                disabled={isLoading || sucesso !== ""}
+                className="h-12 w-full bg-black text-white rounded-xl disabled:opacity-50"
               >
                 {isLoading ? "Cadastrando..." : "Criar conta"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="w-full rounded-xl text-slate-700 transition duration-200 hover:text-blue-600"
+              >
+                Já tenho conta, voltar ao login
               </button>
             </form>
           </div>

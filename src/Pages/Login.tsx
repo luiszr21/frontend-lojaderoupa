@@ -1,18 +1,17 @@
-import { useState } from "react";
-import axios from "axios";
+﻿import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { postAuth } from "../Services/Api";
 import { useAuthStore } from "../stores/authStore";
-import { useNavigate } from "react-router-dom";
 
 type Role = "user" | "admin";
 
 interface LoginApiResponse {
   token: string;
-  user?: {
+  user: {
     id: string;
-    role: Role;
-    nome?: string;
-    email?: string;
+    nome: string;
+    email: string;
+    tipo: "cliente" | "admin";
   };
 }
 
@@ -27,53 +26,35 @@ export default function Login() {
   const [tipoAcesso, setTipoAcesso] = useState<Role>("user");
   const [isLoading, setIsLoading] = useState(false);
   const [erro, setErro] = useState("");
-  const [errosCampo, setErrosCampo] = useState<Record<string, string>>({});
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
-  const loginStore = useAuthStore();
+  const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setErro("");
     setErrosCampo({});
     setIsLoading(true);
 
     try {
-      const endpoint = tipoAcesso === "admin" ? "/admin/login" : "/login";
-      const res = await postAuth<LoginApiResponse>(endpoint, { email, senha });
-      const data = res.data;
-
-      const role = data.user?.role;
-      const userId = data.user?.id;
-
-      if (!data.token || !userId) {
-        throw new Error("Resposta de login incompleta.");
-      }
-
-      if (!role) {
-        throw new Error("Resposta de login sem role.");
-      }
-
-      loginStore.login({
-        token: data.token,
-        role,
-        userId,
+      const response = await postAuth<LoginApiResponse>("/login", {
+        email,
+        senha,
       });
 
-      navigate(role === "admin" ? "/admin" : "/cliente");
-    } catch (error: unknown) {
-      if (axios.isAxiosError<ApiErrorResponse>(error)) {
-        const mensagem = error.response?.data?.erro;
-        const campos = error.response?.data?.campos;
+      const { token, user } = response.data;
+      const role = user.tipo === "admin" ? "admin" : "user";
 
-        if (campos) {
-          setErrosCampo(campos);
-        }
+      login({
+        token,
+        role,
+        userId: user.id,
+      });
 
-        setErro(mensagem ?? "Email ou senha invalidos.");
-      } else {
-        setErro("Nao foi possivel fazer login.");
-      }
+      navigate(role === "admin" ? "/admin" : "/", { replace: true });
+    } catch {
+      setErro("Email ou senha inválidos.");
     } finally {
       setIsLoading(false);
     }
@@ -94,8 +75,7 @@ export default function Login() {
               Entre e acompanhe propostas em tempo real.
             </h1>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-300">
-              Um painel limpo para voce negociar produtos, visualizar interacoes
-              e manter seu fluxo de vendas organizado.
+              Um painel limpo para negociar produtos, visualizar interações e manter seu fluxo organizado.
             </p>
           </div>
         </aside>
@@ -114,33 +94,10 @@ export default function Login() {
 
             <form onSubmit={handleLogin} className="mt-7 space-y-4">
               <div>
-                <p className="mb-2 block text-sm font-medium text-slate-700">Tipo de acesso</p>
-                <div className="flex items-center gap-3">
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                    <input
-                      type="radio"
-                      name="tipoAcesso"
-                      value="user"
-                      checked={tipoAcesso === "user"}
-                      onChange={() => setTipoAcesso("user")}
-                    />
-                    Cliente
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                    <input
-                      type="radio"
-                      name="tipoAcesso"
-                      value="admin"
-                      checked={tipoAcesso === "admin"}
-                      onChange={() => setTipoAcesso("admin")}
-                    />
-                    Admin
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="email"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
                   Email
                 </label>
                 <input
@@ -158,21 +115,31 @@ export default function Login() {
               </div>
 
               <div>
-                <label htmlFor="senha" className="mb-2 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="senha"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
                   Senha
                 </label>
-                <input
-                  id="senha"
-                  type="password"
-                  required
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-                  placeholder="Sua senha"
-                />
-                {errosCampo.senha ? (
-                  <p className="mt-1 text-sm text-rose-700">{errosCampo.senha}</p>
-                ) : null}
+                <div className="relative">
+                  <input
+                    id="senha"
+                    type={mostrarSenha ? "text" : "password"}
+                    required
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 pr-12 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    placeholder="Sua senha"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMostrarSenha(!mostrarSenha)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                    title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                  >
+                    {mostrarSenha ? "👁️" : "👁️‍🗨️"}
+                  </button>
+                </div>
               </div>
 
               {erro ? (
