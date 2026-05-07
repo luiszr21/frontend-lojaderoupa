@@ -1,292 +1,182 @@
-import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../Services/Api";
-import { useAuthStore } from "../stores/authStore";
-import type { Proposta } from "../types/proposta";
-import type { Produto } from "../types/produto";
-import axios from "axios";
+import type { MinhasPropostasResponse, Produto, Proposta } from "../types";
 
-interface PropostaComProduto extends Proposta {
-  produtoInfo?: Produto;
+type PropostasApiResponse = MinhasPropostasResponse | { propostas: MinhasPropostasResponse };
+
+function extrairListaPropostas(data: PropostasApiResponse): MinhasPropostasResponse {
+	if (Array.isArray(data)) {
+		return data;
+	}
+
+	return data.propostas ?? [];
+}
+
+async function buscarMinhasPropostas(): Promise<MinhasPropostasResponse> {
+	const res = await api.get<PropostasApiResponse>("/propostas/minhas");
+	return extrairListaPropostas(res.data);
+}
+
+async function atualizarProposta(id: string, mensagem: string): Promise<void> {
+	await api.patch(`/propostas/${id}`, { mensagem });
+}
+
+async function excluirProposta(id: string): Promise<void> {
+	await api.delete(`/propostas/${id}`);
 }
 
 export default function MinhasInteracoes() {
-  const navigate = useNavigate();
-  const token = useAuthStore((state) => state.token);
-  const logout = useAuthStore((state) => state.logout);
-  const [propostas, setPropostas] = useState<PropostaComProduto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [erro, setErro] = useState("");
-  const [deletando, setDeletando] = useState<string | null>(null);
+	const [propostas, setPropostas] = useState<MinhasPropostasResponse>([]);
+	const [produtos, setProdutos] = useState<Produto[]>([]);
+	const [status, setStatus] = useState("Carregando suas propostas...");
+	const [mensagensEditadas, setMensagensEditadas] = useState<Record<string, string>>({});
+	const [idProcessando, setIdProcessando] = useState<string | null>(null);
 
-  // Redirecionar se não autenticado
-  useEffect(() => {
-    if (!token) {
-      navigate("/login", { replace: true });
-    }
-  }, [token, navigate]);
+	useEffect(() => {
+		Promise.all([
+			buscarMinhasPropostas(),
+			api.get<Produto[]>("/produtos").then((res) => res.data).catch(() => []),
+		])
+			.then(([listaPropostas, listaProdutos]) => {
+				setPropostas(listaPropostas);
+				setProdutos(listaProdutos);
+				setStatus(`Voce possui ${listaPropostas.length} proposta(s).`);
+			})
+			.catch(() => {
+				setStatus("Falha ao carregar propostas. Tente novamente.");
+			});
+	}, []);
 
-  // Buscar propostas do usuário
-  useEffect(() => {
-    if (!token) return;
+	const produtoPorId = useMemo(() => {
+		return new Map(produtos.map((produto) => [produto.id, produto]));
+	}, [produtos]);
 
-    api
-      .get<any>("/propostas/minhas")
-      .then(async (res) => {
-        console.log("Propostas carregadas:", res.data);
-        // Backend retorna { propostas: [], paginacao: {} }
-        const propostasData = Array.isArray(res.data) ? res.data : res.data.propostas || [];
-        
-        // Carregar detalhes de cada produto para obter a imagem
-        const propostasComProduto = await Promise.all(
-          propostasData.map(async (proposta: Proposta) => {
-            try {
-              const produtoRes = await api.get<Produto>(`/produtos/${proposta.produtoId}`);
-              return {
-                ...proposta,
-                produtoInfo: produtoRes.data,
-              };
-            } catch (error) {
-              console.warn(`Erro ao buscar produto ${proposta.produtoId}:`, error);
-              return proposta;
-            }
-          })
-        );
-        
-        setPropostas(propostasComProduto);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Erro ao buscar propostas:", error);
-        if (axios.isAxiosError(error)) {
-          console.error("Status HTTP:", error.response?.status);
-          console.error("Dados do erro:", error.response?.data);
-          if (error.response?.status === 401) {
-            navigate("/login", { replace: true });
-          } else if (error.response?.status === 403) {
-            // 403 Forbidden - pode ser que o endpoint não esteja implementado ou há problema de permissão
-            console.error("403 Forbidden - Verificar com o backend");
-            setErro("Acesso negado. Verifique com o administrador ou tente fazer login novamente.");
-            setIsLoading(false);
-          } else if (error.response?.status === 404) {
-            // Endpoint não existe ou sem propostas
-            setPropostas([]);
-            setIsLoading(false);
-          } else {
-            setErro(`Erro ao carregar propostas. (${error.response?.status || "Desconhecido"})`);
-            setIsLoading(false);
-          }
-        } else {
-          setErro("Erro de conexão ao carregar propostas.");
-          setIsLoading(false);
-        }
-      });
-  }, [token, navigate]);
+	function getMensagemAtual(proposta: Proposta): string {
+		return mensagensEditadas[proposta.id] ?? proposta.mensagem;
+	}
 
-  const getStatusColor = (status: Proposta["status"]) => {
-    switch (status) {
-      case "pendente":
-        return "bg-yellow-100 text-yellow-800";
-      case "aceita":
-        return "bg-green-100 text-green-800";
-      case "rejeitada":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-slate-100 text-slate-800";
-    }
-  };
+	async function handleSalvarAlteracao(proposta: Proposta) {
+		const mensagemAtual = getMensagemAtual(proposta).trim();
 
-  const getStatusLabel = (status: Proposta["status"]) => {
-    switch (status) {
-      case "pendente":
-        return "Pendente";
-      case "aceita":
-        return "Aceita";
-      case "rejeitada":
-        return "Rejeitada";
-      default:
-        return "Desconhecido";
-    }
-  };
+		if (!mensagemAtual) {
+			setStatus("A mensagem da proposta nao pode ficar vazia.");
+			return;
+		}
 
-  async function handleExcluirProposta(propostaId: string) {
-    if (!window.confirm("Tem certeza que deseja excluir esta proposta?")) {
-      return;
-    }
+		setIdProcessando(proposta.id);
+		setStatus("Salvando alteracao...");
 
-    setDeletando(propostaId);
+		try {
+			await atualizarProposta(proposta.id, mensagemAtual);
+			setPropostas((estadoAtual) =>
+				estadoAtual.map((item) =>
+					item.id === proposta.id ? { ...item, mensagem: mensagemAtual } : item,
+				),
+			);
+			setStatus("Proposta alterada com sucesso.");
+		} catch {
+			setStatus("Nao foi possivel alterar a proposta.");
+		} finally {
+			setIdProcessando(null);
+		}
+	}
 
-    try {
-      await api.delete(`/propostas/${propostaId}`);
-      // Remove a proposta da lista
-      setPropostas(propostas.filter((p) => p.id !== propostaId));
-    } catch (error) {
-      console.error("Erro ao excluir proposta:", error);
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 401) {
-          navigate("/login", { replace: true });
-        } else if (error.response?.status === 404) {
-          setErro("Proposta não encontrada.");
-        } else {
-          setErro(`Erro ao excluir proposta. (${error.response?.status || "Desconhecido"})`);
-        }
-      } else {
-        setErro("Erro ao excluir proposta.");
-      }
-    } finally {
-      setDeletando(null);
-    }
-  }
+	async function handleDesfazer(proposta: Proposta) {
+		setIdProcessando(proposta.id);
+		setStatus("Desfazendo proposta...");
 
-  if (!token) {
-    return null;
-  }
+		try {
+			await excluirProposta(proposta.id);
+			setPropostas((estadoAtual) => estadoAtual.filter((item) => item.id !== proposta.id));
+			setStatus("Proposta desfeita com sucesso.");
+		} catch {
+			setStatus("Nao foi possivel desfazer a proposta.");
+		} finally {
+			setIdProcessando(null);
+		}
+	}
 
-  return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5f0e7_0%,#e7ecf1_45%,#d8e3ec_100%)]">
-      <div className="w-full px-4 py-5 sm:px-6 md:px-8">
-        <header className="flex items-center justify-between rounded-lg bg-slate-900 px-4 py-3 text-slate-100 mb-6">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80">
-            <span className="text-2xl" aria-hidden="true">
-              👕
-            </span>
-            <strong className="text-base font-black">Vitrine</strong>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              to="/"
-              className="text-xs font-semibold text-cyan-300 hover:text-cyan-200"
-            >
-              Explorar produtos
-            </Link>
-            <button
-              onClick={() => {
-                logout();
-                navigate("/login", { replace: true });
-              }}
-              className="text-xs font-semibold text-red-400 hover:text-red-300"
-            >
-              Sair
-            </button>
-          </div>
-        </header>
+	return (
+		<div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5f0e7_0%,#e7ecf1_45%,#d8e3ec_100%)]">
+			<div className="w-full px-4 py-5 sm:px-6 md:px-8">
+				<header className="flex items-center justify-between rounded-lg bg-slate-900 px-4 py-3 text-slate-100">
+					<div className="flex items-center gap-3">
+						<span className="text-2xl" aria-hidden="true">🧾</span>
+						<strong className="text-base font-black">Minhas propostas</strong>
+					</div>
+					<Link to="/cliente" className="text-xs font-semibold text-cyan-300 hover:text-cyan-200">
+						Voltar para vitrine
+					</Link>
+				</header>
 
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-black text-slate-900 mb-2">
-            Minhas Propostas
-          </h1>
-          <p className="text-slate-600 mb-6">
-            Acompanhe o status de suas propostas e interações com os produtos.
-          </p>
+				<p className="mt-4 text-sm text-slate-700">{status}</p>
 
-          {isLoading ? (
-            <p className="text-slate-600">Carregando propostas...</p>
-          ) : erro ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-              {erro}
-            </div>
-          ) : propostas.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-white px-6 py-8 text-center">
-              <p className="text-slate-600 mb-4">
-                Você ainda não enviou nenhuma proposta.
-              </p>
-              <Link
-                to="/"
-                className="inline-block px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-500"
-              >
-                Explorar produtos
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-lg">
-              <table className="w-full">
-                <thead className="bg-slate-100 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
-                      Produto
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
-                      Mensagem
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-slate-900">
-                      Ações
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {propostas.map((proposta) => (
-                    <tr
-                      key={proposta.id}
-                      className="hover:bg-slate-50 transition"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          {proposta.produtoInfo?.imagemUrl ? (
-                            <img
-                              src={proposta.produtoInfo.imagemUrl}
-                              alt={proposta.produtoInfo.nome}
-                              className="w-12 h-12 rounded object-cover"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded bg-slate-100 flex items-center justify-center text-xs text-slate-400">
-                              Sem imagem
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-sm font-semibold text-slate-900">
-                              {proposta.produtoInfo?.nome || "Produto"}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-900 max-w-xs truncate">
-                        {proposta.mensagem}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                            proposta.status
-                          )}`}
-                        >
-                          {getStatusLabel(proposta.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-3">
-                          <Link
-                            to={`/produto/${proposta.produtoId}`}
-                            className="text-xs font-semibold text-cyan-600 hover:text-cyan-700 underline"
-                          >
-                            Ver
-                          </Link>
-                          <button
-                            onClick={() => handleExcluirProposta(proposta.id)}
-                            disabled={deletando === proposta.id}
-                            className="text-red-600 hover:text-red-700 disabled:opacity-50 transition text-lg"
-                            title="Excluir proposta"
-                          >
-                            {deletando === proposta.id ? "⏳" : "🗑️"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+				{!propostas.length ? (
+					<p className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-sm text-slate-600">
+						Voce ainda nao fez propostas.
+					</p>
+				) : (
+					<section className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+						{propostas.map((proposta) => {
+							const produto = produtoPorId.get(proposta.produtoId);
+							const processando = idProcessando === proposta.id;
 
-          <Link
-            to="/"
-            className="mt-6 inline-block px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600"
-          >
-            ← Voltar para home
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+							return (
+								<article key={proposta.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+									<h2 className="text-lg font-black text-slate-900">
+										{produto?.nome ?? `Produto ${proposta.produtoId}`}
+									</h2>
+									<p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+										Status: {proposta.status}
+									</p>
+									<p className="mt-2 text-sm text-slate-700">
+										<strong>Tamanho:</strong> {produto?.tamanho ?? "Nao informado"}
+									</p>
+									<p className="mt-1 text-sm text-slate-700">
+										<strong>Descricao:</strong> {produto?.descricao ?? "Sem descricao"}
+									</p>
+
+									<label htmlFor={`mensagem-${proposta.id}`} className="mt-3 block text-xs font-semibold uppercase tracking-wide text-slate-600">
+										Sua mensagem
+									</label>
+									<textarea
+										id={`mensagem-${proposta.id}`}
+										rows={4}
+										value={getMensagemAtual(proposta)}
+										onChange={(event) =>
+											setMensagensEditadas((estadoAtual) => ({
+												...estadoAtual,
+												[proposta.id]: event.target.value,
+											}))
+										}
+										className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+									/>
+
+									<div className="mt-3 flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => handleSalvarAlteracao(proposta)}
+											disabled={processando}
+											className="rounded-md bg-cyan-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
+										>
+											{processando ? "Salvando..." : "Alterar proposta"}
+										</button>
+										<button
+											type="button"
+											onClick={() => handleDesfazer(proposta)}
+											disabled={processando}
+											className="rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+										>
+											Desfazer proposta
+										</button>
+									</div>
+								</article>
+							);
+						})}
+					</section>
+				)}
+			</div>
+		</div>
+	);
 }

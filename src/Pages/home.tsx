@@ -17,23 +17,43 @@ export default function Home() {
   const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
+    const endpoint = somenteDestaques ? "/produtos/destaques" : "/produtos";
+
+    setStatus(
+      somenteDestaques
+        ? "Carregando produtos em destaque..."
+        : "Conectando ao backend...",
+    );
+
     api
-      .get<ListarProdutosResponse>("/produtos")
+      .get<ListarProdutosResponse>(endpoint)
       .then((res) => {
         setProdutos(res.data);
-        setStatus(`Conectado. ${res.data.length} produto(s) recebido(s).`);
+        setStatus(
+          somenteDestaques
+            ? `Conectado. ${res.data.length} destaque(s) recebido(s).`
+            : `Conectado. ${res.data.length} produto(s) recebido(s).`,
+        );
       })
       .catch((error: unknown) => {
         if (axios.isAxiosError(error) && error.response?.status === 500) {
-          setStatus("Falha no servidor ao carregar produtos. Tente novamente.");
+          setStatus(
+            somenteDestaques
+              ? "Falha no servidor ao carregar destaques. Tente novamente."
+              : "Falha no servidor ao carregar produtos. Tente novamente.",
+          );
           return;
         }
 
         const mensagem =
           error instanceof Error ? error.message : "Erro ao conectar.";
-        setStatus(`Falha na conexao: ${mensagem}`);
+        setStatus(
+          somenteDestaques
+            ? `Falha na conexao ao carregar destaques: ${mensagem}`
+            : `Falha na conexao: ${mensagem}`,
+        );
       });
-  }, []);
+  }, [somenteDestaques]);
 
   const produtosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -50,11 +70,7 @@ export default function Home() {
     });
   }, [busca, produtos]);
 
-  const destaques = [...produtosFiltrados]
-    .sort((a, b) => b.preco - a.preco)
-    .slice(0, 6);
-
-  const produtosVisiveis = somenteDestaques ? destaques : produtosFiltrados;
+  const produtosVisiveis = produtosFiltrados;
 
   function handlePesquisar(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

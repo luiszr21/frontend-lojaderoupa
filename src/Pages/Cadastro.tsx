@@ -9,7 +9,13 @@ interface RequisitoDeSenha {
   validado: boolean;
 }
 
+interface ApiErrorResponse {
+  erro?: string;
+  campos?: Record<string, string>;
+}
+
 export default function Cadastro() {
+  const [nomeUsuario, setNomeUsuario] = useState("");
   const [identificador, setIdentificador] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmacaoSenha, setConfirmacaoSenha] = useState("");
@@ -58,6 +64,14 @@ export default function Cadastro() {
   async function handleCadastro(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErro("");
+    setErrosCampo({});
+
+    const nome = nomeUsuario.trim();
+
+    if (!nome) {
+      setErro("Informe um nome de usuário.");
+      return;
+    }
 
     // Validação: confirmação de senha
     if (senha !== confirmacaoSenha) {
@@ -190,11 +204,26 @@ export default function Cadastro() {
               <input
                 type="text"
                 required
+                value={nomeUsuario}
+                onChange={(e) => setNomeUsuario(e.target.value)}
+                placeholder="Nome de usuário"
+                className="h-12 w-full rounded-xl border px-4"
+              />
+              {errosCampo.nome ? (
+                <p className="text-red-500 text-sm">{errosCampo.nome}</p>
+              ) : null}
+
+              <input
+                type="text"
+                required
                 value={identificador}
                 onChange={(e) => setIdentificador(e.target.value)}
                 placeholder="email@exemplo.com"
                 className="h-12 w-full rounded-xl border px-4"
               />
+              {errosCampo.email ? (
+                <p className="text-red-500 text-sm">{errosCampo.email}</p>
+              ) : null}
 
               <div className="relative">
                 <input

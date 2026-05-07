@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { postAuth } from "../Services/Api";
 import { useAuthStore } from "../stores/authStore";
 
+type Role = "user" | "admin";
+
 interface LoginApiResponse {
   token: string;
   user: {
@@ -13,9 +15,15 @@ interface LoginApiResponse {
   };
 }
 
+interface ApiErrorResponse {
+  erro?: string;
+  campos?: Record<string, string>;
+}
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [tipoAcesso, setTipoAcesso] = useState<Role>("user");
   const [isLoading, setIsLoading] = useState(false);
   const [erro, setErro] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -26,6 +34,7 @@ export default function Login() {
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErro("");
+    setErrosCampo({});
     setIsLoading(true);
 
     try {
@@ -100,6 +109,9 @@ export default function Login() {
                   className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                   placeholder="voce@exemplo.com"
                 />
+                {errosCampo.email ? (
+                  <p className="mt-1 text-sm text-rose-700">{errosCampo.email}</p>
+                ) : null}
               </div>
 
               <div>
