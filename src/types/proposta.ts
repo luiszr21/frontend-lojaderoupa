@@ -12,6 +12,8 @@ export interface Proposta {
   produtoId: UUID;
   mensagem: string;
   status: StatusProposta;
+  resposta?: string | null;
+  dataResponsta?: string | null;
 }
 
 export interface CriarPropostaRequest {

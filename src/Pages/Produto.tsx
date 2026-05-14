@@ -95,19 +95,19 @@ export default function Produto() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5f0e7_0%,#e7ecf1_45%,#d8e3ec_100%)] flex items-center justify-center">
-        <p className="text-slate-600">Carregando produto...</p>
+      <div className="min-h-screen bg-[linear-gradient(135deg,#ecfdf5_0%,#f0fdf4_45%,#dcfce7_100%)] flex items-center justify-center">
+        <p className="text-emerald-800">Carregando produto...</p>
       </div>
     );
   }
 
   if (erro && !produto) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5f0e7_0%,#e7ecf1_45%,#d8e3ec_100%)] flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen bg-[linear-gradient(135deg,#ecfdf5_0%,#f0fdf4_45%,#dcfce7_100%)] flex flex-col items-center justify-center gap-4 px-4 text-center">
         <p className="text-red-600 font-semibold">{erro}</p>
         <Link
           to="/"
-          className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-500"
+          className="px-4 py-2 rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-500"
         >
           Voltar para home
         </Link>
@@ -120,18 +120,17 @@ export default function Produto() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5f0e7_0%,#e7ecf1_45%,#d8e3ec_100%)]">
+    <div className="min-h-screen bg-[linear-gradient(135deg,#ecfdf5_0%,#f0fdf4_45%,#dcfce7_100%)]">
       <div className="w-full px-4 py-5 sm:px-6 md:px-8">
-        <header className="flex items-center justify-between rounded-lg bg-slate-900 px-4 py-3 text-slate-100 mb-6">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80">
-            <span className="text-2xl" aria-hidden="true">
-              👕
+        <header className="mb-6 flex items-center justify-between rounded-2xl border border-emerald-400/10 bg-emerald-950/80 px-5 py-3 text-slate-100 shadow-2xl shadow-emerald-950/20 backdrop-blur-xl">
+          <Link to="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-85">
+            <span className="text-sm font-bold tracking-widest text-white uppercase">
+              Garimpei
             </span>
-            <strong className="text-base font-black">Vitrine</strong>
           </Link>
           <Link
             to="/propostas"
-            className="text-xs font-semibold text-slate-300 hover:text-cyan-200"
+            className="text-xs font-semibold text-emerald-100 transition hover:text-white"
           >
             Minhas propostas
           </Link>
@@ -140,15 +139,15 @@ export default function Produto() {
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => navigate("/")}
-            className="mb-4 text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1"
+            className="cursor-pointer mb-4 flex items-center gap-1 text-sm text-emerald-800 transition hover:text-emerald-950"
           >
             ← Voltar
           </button>
 
-          <div className="grid md:grid-cols-2 gap-8 bg-white rounded-xl p-6 shadow-lg">
+          <div className="grid gap-8 rounded-3xl border border-white/40 bg-white/85 p-6 shadow-2xl backdrop-blur md:grid-cols-2">
             {/* Imagem do Produto */}
             <div className="flex flex-col gap-4">
-              <div className="bg-slate-100 rounded-lg aspect-square flex items-center justify-center overflow-hidden">
+              <div className="aspect-square overflow-hidden rounded-2xl bg-emerald-50 flex items-center justify-center">
                 {produto.imagemUrl ? (
                   <img
                     src={produto.imagemUrl}
@@ -156,7 +155,7 @@ export default function Produto() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <p className="text-slate-400">Sem imagem disponível</p>
+                  <p className="text-emerald-700">Sem imagem disponível</p>
                 )}
               </div>
             </div>
@@ -164,15 +163,15 @@ export default function Produto() {
             {/* Informações do Produto */}
             <div className="flex flex-col justify-between">
               <div>
-                <h1 className="text-4xl font-black text-slate-900 mb-2">
+                <h1 className="mb-2 text-4xl font-black text-slate-900">
                   {produto.nome}
                 </h1>
-                <p className="text-slate-600 mb-4">{produto.descricao}</p>
+                <p className="mb-4 text-slate-600">{produto.descricao}</p>
 
                 <div className="space-y-3 mb-6">
-                  <div className="flex justify-between items-center border-b pb-2">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <span className="text-slate-600">Preço:</span>
-                    <span className="text-2xl font-bold text-cyan-600">
+                    <span className="text-2xl font-bold text-emerald-700">
                       {new Intl.NumberFormat("pt-BR", {
                         style: "currency",
                         currency: "BRL",
@@ -191,7 +190,7 @@ export default function Produto() {
               </div>
 
               {/* Formulário de Proposta */}
-              <form onSubmit={handleEnviarProposta} className="space-y-4 border-t pt-4">
+              <form onSubmit={handleEnviarProposta} className="space-y-4 border-t border-slate-200 pt-4">
                 <h3 className="text-lg font-bold text-slate-900">
                   Enviar Proposta
                 </h3>
@@ -200,7 +199,7 @@ export default function Produto() {
                   value={mensagem}
                   onChange={(e) => setMensagem(e.target.value)}
                   placeholder="Descreva seu interesse ou faça uma pergunta sobre o produto..."
-                  className="w-full h-24 rounded-lg border border-slate-300 p-3 text-sm text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                  className="h-24 w-full rounded-lg border border-slate-300 p-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                 />
 
                 {erro && (
@@ -216,7 +215,7 @@ export default function Produto() {
                 <button
                   type="submit"
                   disabled={isEnviandoProposta}
-                  className="w-full bg-cyan-600 text-white font-bold py-3 rounded-lg hover:bg-cyan-500 disabled:opacity-50 transition"
+                  className="cursor-pointer w-full rounded-lg bg-emerald-600 py-3 font-bold text-white transition hover:bg-emerald-500 disabled:opacity-50"
                 >
                   {isEnviandoProposta ? "Enviando..." : "Enviar Proposta"}
                 </button>
@@ -226,7 +225,7 @@ export default function Produto() {
 
           <Link
             to="/"
-            className="mt-6 inline-block px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600"
+            className="mt-6 inline-block rounded-lg bg-slate-700 px-4 py-2 text-white transition hover:bg-slate-600"
           >
             Continuar explorando
           </Link>

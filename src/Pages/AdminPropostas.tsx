@@ -269,7 +269,7 @@ export default function AdminPropostas() {
                         <button
                           onClick={() => handleResponder(interacao.id)}
                           disabled={enviandoResposta}
-                          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
+                          className="cursor-pointer px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
                         >
                           {enviandoResposta ? "Enviando..." : "Enviar Resposta"}
                         </button>
@@ -278,7 +278,7 @@ export default function AdminPropostas() {
                             setSelectedId(null);
                             setResposta("");
                           }}
-                          className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
+                          className="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
                         >
                           Cancelar
                         </button>
@@ -294,7 +294,7 @@ export default function AdminPropostas() {
                       {selectedId !== interacao.id ? (
                         <button
                           onClick={() => setSelectedId(interacao.id)}
-                          className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded transition-colors"
+                          className="cursor-pointer px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded transition-colors"
                         >
                            Responder
                         </button>
@@ -304,7 +304,7 @@ export default function AdminPropostas() {
                             setSelectedId(null);
                             setResposta("");
                           }}
-                          className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold rounded transition-colors"
+                          className="cursor-pointer px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold rounded transition-colors"
                         >
                            Fechar
                         </button>
@@ -313,9 +313,9 @@ export default function AdminPropostas() {
                   )}
 
                   {interacao.status === "respondida" && (
-                    <button
-                      onClick={() => handleConfirmar(interacao.id)}
-                      className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded transition-colors"
+                  <button
+                    onClick={() => handleConfirmar(interacao.id)}
+                    className="cursor-pointer px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded transition-colors"
                       title="Confirmar"
                     >
                        Confirmar
@@ -324,7 +324,7 @@ export default function AdminPropostas() {
 
                   <button
                     onClick={() => handleExcluir(interacao.id)}
-                    className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded transition-colors"
+                    className="cursor-pointer px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded transition-colors"
                     title="Excluir"
                   >
                      Excluir

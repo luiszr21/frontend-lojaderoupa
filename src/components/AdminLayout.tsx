@@ -10,9 +10,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { logout } = useAuthStore();
 
   const navItems = [
-    { path: "/admin", label: "Dashboard", icon: "📊" },
-    { path: "/admin/produtos", label: "Produtos", icon: "📦" },
-    { path: "/admin/interacoes", label: "Interações", icon: "💬" },
+    { path: "/admin", label: "Dashboard" },
+    { path: "/admin/produtos", label: "Produtos" },
+    { path: "/admin/interacoes", label: "Interações" },
   ];
 
   const isActive = (path: string) => {
@@ -47,7 +47,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   : "text-gray-300 hover:bg-slate-800 hover:text-white"
               }`}
             >
-              <span className="text-xl">{item.icon}</span>
               <span>{item.label}</span>
             </Link>
           ))}
@@ -58,7 +57,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           onClick={handleLogout}
           className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
         >
-          🚪 Sair
+          Sair
         </button>
       </aside>
 

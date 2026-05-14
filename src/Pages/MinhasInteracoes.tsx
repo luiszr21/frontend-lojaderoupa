@@ -111,36 +111,39 @@ export default function MinhasInteracoes() {
 	}
 
 	return (
-		<div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5f0e7_0%,#e7ecf1_45%,#d8e3ec_100%)]">
-			<div className="w-full px-4 py-5 sm:px-6 md:px-8">
-				<header className="flex items-center justify-between rounded-lg bg-slate-900 px-4 py-3 text-slate-100">
-					<div className="flex items-center gap-3">
-						<span className="text-2xl" aria-hidden="true">🧾</span>
-						<strong className="text-base font-black">Minhas propostas</strong>
+		<div className="min-h-screen bg-[linear-gradient(135deg,#ecfdf5_0%,#f0fdf4_45%,#dcfce7_100%)]">
+			<div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+				<header className="sticky top-4 z-40 mb-6 flex items-center justify-between rounded-2xl border border-emerald-400/10 bg-emerald-950/80 px-5 py-3 text-slate-100 shadow-2xl shadow-emerald-950/20 backdrop-blur-xl">
+					<div className="flex items-center gap-2.5">
+						<span className="text-sm font-bold tracking-widest text-white uppercase" aria-hidden="true">
+							 Minhas propostas
+						</span>
 					</div>
-					<Link to="/cliente" className="text-xs font-semibold text-cyan-300 hover:text-cyan-200">
-						Voltar para vitrine
+					<Link to="/cliente" className="text-xs font-semibold text-emerald-100 transition hover:text-white">
+						Voltar a Garimpar
 					</Link>
 				</header>
 
-				<p className="mt-4 text-sm text-slate-700">{status}</p>
+				<div className="mb-4 flex items-center justify-between">
+					<p className="text-sm text-emerald-900">{status}</p>
+				</div>
 
 				{!propostas.length ? (
-					<p className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-sm text-slate-600">
+					<p className="rounded-2xl border border-dashed border-emerald-200 bg-white/80 px-4 py-6 text-sm text-emerald-900 shadow-sm">
 						Você ainda não fez propostas.
 					</p>
 				) : (
-					<section className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+					<section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
 						{propostas.map((proposta) => {
 							const produto = produtoPorId.get(proposta.produtoId);
 							const processando = idProcessando === proposta.id;
 
 							return (
-								<article key={proposta.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+								<article key={proposta.id} className="rounded-3xl border border-white/40 bg-white/85 p-5 shadow-2xl backdrop-blur">
 									<h2 className="text-lg font-black text-slate-900">
 										{produto?.nome ?? `Produto ${proposta.produtoId}`}
 									</h2>
-									<p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+									<p className="mt-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
 										Status: {proposta.status}
 									</p>
 									<p className="mt-2 text-sm text-slate-700">
@@ -149,6 +152,22 @@ export default function MinhasInteracoes() {
 									<p className="mt-1 text-sm text-slate-700">
 										<strong>Descrição:</strong> {produto?.descricao ?? "Sem descrição"}
 									</p>
+
+									{proposta.resposta ? (
+										<div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4">
+											<p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+												Resposta do admin
+											</p>
+											<p className="mt-2 whitespace-pre-wrap text-sm text-emerald-950">
+												{proposta.resposta}
+											</p>
+											{proposta.dataResponsta ? (
+												<p className="mt-2 text-xs text-emerald-700">
+													Respondido em: {new Date(proposta.dataResponsta).toLocaleDateString("pt-BR")}
+												</p>
+											) : null}
+										</div>
+									) : null}
 
 									<label htmlFor={`mensagem-${proposta.id}`} className="mt-3 block text-xs font-semibold uppercase tracking-wide text-slate-600">
 										Sua mensagem
@@ -163,7 +182,7 @@ export default function MinhasInteracoes() {
 												[proposta.id]: event.target.value,
 											}))
 										}
-										className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+										className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
 									/>
 
 									<div className="mt-3 flex items-center gap-2">
@@ -171,7 +190,7 @@ export default function MinhasInteracoes() {
 											type="button"
 											onClick={() => handleSalvarAlteracao(proposta)}
 											disabled={processando}
-											className="rounded-md bg-cyan-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
+											className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
 										>
 											{processando ? "Salvando..." : "Alterar proposta"}
 										</button>
@@ -179,7 +198,7 @@ export default function MinhasInteracoes() {
 											type="button"
 											onClick={() => handleDesfazer(proposta)}
 											disabled={processando}
-											className="rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+											className="cursor-pointer rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
 										>
 											Desfazer proposta
 										</button>

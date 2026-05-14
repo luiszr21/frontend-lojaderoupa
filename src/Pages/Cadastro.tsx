@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { postAuth } from "../Services/Api";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import axios from "axios";
 
 interface RequisitoDeSenha {
@@ -168,23 +169,32 @@ export default function Cadastro() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden  px-4 py-8 md:px-8">
+    <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(135deg,#ecfdf5_0%,#f0fdf4_45%,#dcfce7_100%)] px-4 py-8 md:px-8">
       <div className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-emerald-400/15 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-teal-400/15 blur-3xl" />
 
-      <div className="relative mx-auto grid min-h-[85vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-white/40 bg-white/70 shadow-2xl backdrop-blur md:grid-cols-2">
-        <aside className="hidden flex-col justify-between bg-slate-900 p-10 text-slate-100 md:flex">
+      <div className="relative mx-auto grid min-h-[85vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-white/40 bg-white/75 shadow-2xl backdrop-blur md:grid-cols-2">
+        <aside className="hidden flex-col justify-between bg-emerald-950 p-10 text-slate-100 md:flex">
           <div>
-          
-            <h1 className="mt-5 text-4xl text-center p-6 font-semibold leading-tight">
-              Crie sua conta e inicie  seus garimpos.
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100">
+              Garimpei
+            </span>
+            <h1 className="mt-6 text-4xl font-black leading-tight">
+              Crie sua conta e inicie seus garimpos.
             </h1>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-300">
+              Faça parte do Garimpei, acompanhe peças novas e envie propostas com mais facilidade.
+            </p>
           </div>
         </aside>
 
         <section className="flex items-center p-6 sm:p-8 md:p-10">
           <div className="w-full">
-            <h2 className="text-3xl font-black text-slate-900">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-700">
+              Criar conta
+            </span>
+
+            <h2 className="mt-4 text-3xl font-black text-slate-900">
               Criar conta
             </h2>
 
@@ -195,7 +205,7 @@ export default function Cadastro() {
                 value={nomeUsuario}
                 onChange={(e) => setNomeUsuario(e.target.value)}
                 placeholder="Nome de usuário"
-                className="h-12 w-full rounded-xl border px-4"
+                className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
               {errosCampo.nome ? (
                 <p className="text-red-500 text-sm">{errosCampo.nome}</p>
@@ -207,7 +217,7 @@ export default function Cadastro() {
                 value={identificador}
                 onChange={(e) => setIdentificador(e.target.value)}
                 placeholder="email@exemplo.com"
-                className="h-12 w-full rounded-xl border px-4"
+                className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
               {errosCampo.email ? (
                 <p className="text-red-500 text-sm">{errosCampo.email}</p>
@@ -223,12 +233,12 @@ export default function Cadastro() {
                     validarRequisitos(e.target.value);
                   }}
                   placeholder="Senha"
-                  className="h-12 w-full rounded-xl border px-4 pr-12"
+                  className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 pr-12 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                 />
                 <button
                   type="button"
                   onClick={() => setMostrarSenha(!mostrarSenha)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 hover:text-slate-700"
                   title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
                 >
                   {mostrarSenha ? "👁️" : "👁️‍🗨️"}
@@ -268,12 +278,12 @@ export default function Cadastro() {
                   value={confirmacaoSenha}
                   onChange={(e) => setConfirmacaoSenha(e.target.value)}
                   placeholder="Confirmar senha"
-                  className="h-12 w-full rounded-xl border px-4 pr-12"
+                  className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 pr-12 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                 />
                 <button
                   type="button"
                   onClick={() => setMostrarConfirmacaoSenha(!mostrarConfirmacaoSenha)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 hover:text-slate-700"
                   title={mostrarConfirmacaoSenha ? "Ocultar senha" : "Mostrar senha"}
                 >
                   {mostrarConfirmacaoSenha ? "👁️" : "👁️‍🗨️"}
@@ -291,18 +301,19 @@ export default function Cadastro() {
               <button
                 type="submit"
                 disabled={isLoading || sucesso !== ""}
-                className="h-12 w-full bg-black text-white rounded-xl disabled:opacity-50"
+                className="cursor-pointer h-12 w-full rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-500 disabled:opacity-50"
               >
                 {isLoading ? "Cadastrando..." : "Criar conta"}
               </button>
 
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="w-full rounded-xl text-slate-700 transition duration-200 hover:text-blue-600"
-              >
-                Já tenho conta, voltar ao login
-              </button>
+              <div className="text-center">
+                <Link
+                  to="/login"
+                  className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-600"
+                >
+                  Já tenho conta, voltar ao login
+                </Link>
+              </div>
             </form>
           </div>
         </section>

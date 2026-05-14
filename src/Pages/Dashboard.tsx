@@ -62,7 +62,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-gray-600">Visão geral do sistema</p>
+          <p className="text-gray-600">Veja um resumo completo do seu negócio em tempo real</p>
         </div>
 
         {/* Stats Grid */}
@@ -109,103 +109,94 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Chart 1: Distribuição de Interações */}
           <div className="bg-white rounded-xl p-6 shadow-md">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Distribuição de Interações
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+              Status das Propostas dos Clientes
             </h2>
+            <p className="text-sm text-gray-500 mb-4">Quantas propostas foram respondidas e quantas ainda estão aguardando</p>
             <div className="flex justify-center">
-              <svg viewBox="0 0 400 400" className="w-full max-w-xs h-auto">
-                <VictoryPie
-                  data={[
-                    {
-                      x: "Respondidas",
-                      y: stats.interacoesRespondidas,
-                      fill: "#10b981",
-                    },
-                    {
-                      x: "Pendentes",
-                      y: stats.interacoesPendentes,
-                      fill: "#f59e0b",
-                    },
-                  ]}
-                  innerRadius={60}
-                  labels={({ datum }) => `${datum.x}: ${datum.y}`}
-                  style={{
-                    labels: {
-                      fill: "#374151",
-                      fontSize: 12,
-                      fontWeight: 500,
-                    },
-                  }}
-                  colorScale={["#10b981", "#f59e0b"]}
-                  width={400}
-                  height={280}
-                />
-              </svg>
+              <VictoryPie
+                data={[
+                  {
+                    x: "Respondidas",
+                    y: stats.interacoesRespondidas,
+                    fill: "#10b981",
+                  },
+                  {
+                    x: "Pendentes",
+                    y: stats.interacoesPendentes,
+                    fill: "#f59e0b",
+                  },
+                ]}
+                innerRadius={60}
+                labels={({ datum }) => `${datum.x}: ${datum.y}`}
+                style={{
+                  labels: {
+                    fill: "#374151",
+                    fontSize: 12,
+                    fontWeight: 500,
+                  },
+                }}
+                colorScale={["#10b981", "#f59e0b"]}
+                width={400}
+                height={280}
+              />
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-3">
                 <span className="w-3 h-3 rounded bg-green-500"></span>
-                <span className="text-sm text-gray-600">Respondidas: {stats.interacoesRespondidas}</span>
+                <span className="text-sm text-gray-600"><strong>✓ Respondidas:</strong> {stats.interacoesRespondidas} propostas</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="w-3 h-3 rounded bg-yellow-500"></span>
-                <span className="text-sm text-gray-600">Pendentes: {stats.interacoesPendentes}</span>
+                <span className="text-sm text-gray-600"><strong>⏳ Pendentes:</strong> {stats.interacoesPendentes} propostas aguardando resposta</span>
               </div>
             </div>
           </div>
 
           {/* Chart 2: Taxa de Resposta */}
           <div className="bg-white rounded-xl p-6 shadow-md">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Taxa de Resposta do Sistema
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+              Eficiência de Resposta
             </h2>
+            <p className="text-sm text-gray-500 mb-4">Qual é a sua taxa de resposta em porcentagem (%)</p>
             <div className="flex justify-center">
-              <svg viewBox="0 0 400 400" className="w-full max-w-xs h-auto">
-                <VictoryPie
-                  data={[
-                    {
-                      x: "Respondidas",
-                      y: stats.taxaRespostaPorcentagem,
-                      fill: "#3b82f6",
-                    },
-                    {
-                      x: "Não Respondidas",
-                      y: 100 - stats.taxaRespostaPorcentagem,
-                      fill: "#e5e7eb",
-                    },
-                  ]}
-                  innerRadius={60}
-                  labels={({ datum }) => `${datum.x}: ${datum.y}%`}
-                  style={{
-                    labels: {
-                      fill: "#374151",
-                      fontSize: 12,
-                      fontWeight: 500,
-                    },
-                  }}
-                  colorScale={["#3b82f6", "#e5e7eb"]}
-                  width={400}
-                  height={280}
-                />
-              </svg>
+              <VictoryPie
+                data={[
+                  {
+                    x: "Respondidas",
+                    y: stats.taxaRespostaPorcentagem,
+                    fill: "#3b82f6",
+                  },
+                  {
+                    x: "Não Respondidas",
+                    y: 100 - stats.taxaRespostaPorcentagem,
+                    fill: "#e5e7eb",
+                  },
+                ]}
+                innerRadius={60}
+                colorScale={["#3b82f6", "#e5e7eb"]}
+                width={400}
+                height={280}
+              />
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-3">
                 <span className="w-3 h-3 rounded bg-blue-500"></span>
-                <span className="text-sm text-gray-600">Taxa: {stats.taxaRespostaPorcentagem}%</span>
+                <span className="text-sm text-gray-600"><strong>✓ Respondidas:</strong> {stats.taxaRespostaPorcentagem}% do total</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="w-3 h-3 rounded bg-gray-300"></span>
-                <span className="text-sm text-gray-600">Restante: {100 - stats.taxaRespostaPorcentagem}%</span>
+                <span className="text-sm text-gray-600"><strong>⏳ Aguardando:</strong> {100 - stats.taxaRespostaPorcentagem}% ainda não foram respondidas</span>
               </div>
             </div>
           </div>
 
           {/* Summary Card */}
           <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-md">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Resumo Rápido
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+              Números Principais
             </h2>
+            <p className="text-sm text-gray-500 mb-4">Todos os dados do seu sistema em um único lugar</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border-l-4 border-blue-500">
                 <span className="text-sm text-gray-600"> Produtos</span>

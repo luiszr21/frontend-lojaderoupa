@@ -23,11 +23,7 @@ export default function Home() {
       .get<ListarProdutosResponse>(endpoint)
       .then((res) => {
         setProdutos(res.data);
-        setStatus(
-          somenteDestaques
-            ? `Conectado. ${res.data.length} destaque(s) recebido(s).`
-            : `Conectado. ${res.data.length} produto(s) recebido(s).`,
-        );
+        setStatus("");
       })
       .catch((error: unknown) => {
         if (axios.isAxiosError(error) && error.response?.status === 500) {
@@ -61,16 +57,29 @@ export default function Home() {
 
   const produtosVisiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase();
+    const valorDigitado = Number(termo.replace(",", "."));
+    const buscaPorValor = termo !== "" && !Number.isNaN(valorDigitado);
 
     if (!termo) {
       return produtos;
     }
 
+    if (buscaPorValor) {
+      return produtos.filter((produto) => produto.preco <= valorDigitado);
+    }
+
     return produtos.filter((produto) => {
       const nome = produto.nome.toLowerCase();
       const descricao = (produto.descricao ?? "").toLowerCase();
+      const tamanho = (produto.tamanho ?? "").toLowerCase();
+      const preco = produto.preco.toString().toLowerCase();
 
-      return nome.includes(termo) || descricao.includes(termo);
+      return (
+        nome.includes(termo) ||
+        descricao.includes(termo) ||
+        tamanho.includes(termo) ||
+        preco.includes(termo)
+      );
     });
   }, [busca, produtos]);
 
@@ -80,7 +89,7 @@ export default function Home() {
   }
 
   return (
-  <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #f0f7ff 0%, #f8fafc 40%, #e8f4fd 100%)" }}>
+  <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 45%, #dcfce7 100%)" }}>
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
       {/* Header */}
@@ -112,7 +121,7 @@ export default function Home() {
             <Link
               to="/login"
               className="rounded-xl px-4 py-1.5 text-xs font-bold text-white shadow-sm transition hover:opacity-90 active:scale-95"
-              style={{ background: "linear-gradient(135deg, #0891b2, #0284c7)" }}
+              style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
             >
               Identifique-se
             </Link>
@@ -121,20 +130,14 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <div className="mt-12 max-w-2xl">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-cyan-700">
-          <span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />
-          Novidades da semana
+      <div className="mt-12 mx-auto max-w-2xl text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-700">
+          <span className="h-1.5 w-1.5 text-center text-8xl" />
+          Coleção da semana
         </span>
 
-        <h1 className="mt-5 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl lg:text-[3.5rem] lg:leading-[1.1]">
-          Roupas em{" "}
-          <span
-            className="bg-clip-text text-transparent"
-            style={{ backgroundImage: "linear-gradient(135deg, #0891b2 0%, #0284c7 60%, #38bdf8 100%)" }}
-          >
-            destaque
-          </span>
+        <h1 className="mt-5 mx-auto max-w-xl text-4xl font-serif font-black leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-[3.75rem] lg:leading-[1.05]">
+          Veja o que temos nessa semana
         </h1>
 
         <p className="mt-3.5 text-base leading-relaxed text-slate-500">
@@ -174,7 +177,7 @@ export default function Home() {
             type="text"
             value={buscaInput}
             onChange={(e) => setBuscaInput(e.target.value)}
-            placeholder="Modelo, marca, preço máximo ou ano"
+            placeholder="Buscar por nome, descrição, tamanho ou preço"
             aria-label="Buscar roupas"
             className="h-11 w-full rounded-xl border border-transparent bg-slate-50 pl-10 pr-4 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100"
           />
@@ -183,8 +186,8 @@ export default function Home() {
         <div className="flex gap-2">
           <button
             type="submit"
-            className="h-11 flex-1 rounded-xl px-6 text-sm font-bold text-white shadow-sm transition hover:opacity-90 active:scale-[0.98] md:flex-none"
-            style={{ background: "linear-gradient(135deg, #0891b2, #0284c7)" }}
+            className="cursor-pointer h-11 flex-1 rounded-xl px-6 text-sm font-bold text-white shadow-sm transition hover:opacity-90 active:scale-[0.98] md:flex-none"
+            style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}
           >
             Pesquisar
           </button>
@@ -193,7 +196,7 @@ export default function Home() {
             type="button"
             onClick={() => setSomenteDestaques((v) => !v)}
             aria-pressed={somenteDestaques}
-            className={`h-11 flex-1 rounded-xl px-5 text-sm font-bold transition active:scale-[0.98] md:flex-none ${
+            className={`cursor-pointer h-11 flex-1 rounded-xl px-5 text-sm font-bold transition active:scale-[0.98] md:flex-none ${
               somenteDestaques
                 ? "bg-amber-400 text-slate-900 shadow-sm hover:bg-amber-300"
                 : "bg-slate-100 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-200"
@@ -206,7 +209,7 @@ export default function Home() {
 
       {/* Status / count */}
       <div className="mt-4 flex items-center justify-between">
-        <p className="text-xs font-medium text-slate-400">{status}</p>
+        {status ? <p className="text-xs font-medium text-slate-400">{status}</p> : <span />}
         {produtosVisiveis.length > 0 && (
           <p className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
             {produtosVisiveis.length} {produtosVisiveis.length === 1 ? "item" : "itens"}
@@ -232,7 +235,7 @@ export default function Home() {
           {somenteDestaques && (
             <button
               onClick={() => setSomenteDestaques(false)}
-              className="mt-5 rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+              className="cursor-pointer mt-5 rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
             >
               Exibir todos
             </button>

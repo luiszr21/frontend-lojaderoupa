@@ -81,7 +81,7 @@ export default function MinhaConta() {
                 type="button"
                 onClick={handleLogout}
                 disabled={carregandoLogout}
-                className="mt-4 rounded-md bg-rose-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer mt-4 rounded-md bg-rose-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {carregandoLogout ? "Saindo..." : "Logout"}
               </button>

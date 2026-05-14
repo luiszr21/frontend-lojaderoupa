@@ -159,7 +159,7 @@ export default function GerenciamentoProdutos() {
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
-              className="px-6 py-2 bg-blue-500 hover:bg-green-600 text-white font-semibold rounded-lg whitespace-nowrap transition-colors"
+              className="cursor-pointer px-6 py-2 bg-blue-500 hover:bg-green-600 text-white font-semibold rounded-lg whitespace-nowrap transition-colors"
             >
                Novo Produto
             </button>
@@ -302,14 +302,14 @@ export default function GerenciamentoProdutos() {
               <div className="flex gap-3 justify-end pt-4">
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors"
+                  className="cursor-pointer px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors"
                 >
                   {editingId ? "Atualizar" : "Criar"} Produto
                 </button>
                 <button
                   type="button"
                   onClick={handleCancelar}
-                  className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
+                  className="cursor-pointer px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>
@@ -357,7 +357,7 @@ export default function GerenciamentoProdutos() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="text-5xl">📦</div>
+                      <div className="text-gray-300 flex items-center justify-center h-full">Sem imagem</div>
                     )}
                   </div>
 
@@ -386,17 +386,17 @@ export default function GerenciamentoProdutos() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEditar(produto)}
-                        className="flex-1 px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-semibold rounded transition-colors"
+                        className="cursor-pointer flex-1 px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-semibold rounded transition-colors"
                         title="Editar"
                       >
-                        ✏️ Editar
+                        Editar
                       </button>
                       <button
                         onClick={() => handleDeletar(produto.id)}
-                        className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded transition-colors"
+                        className="cursor-pointer flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded transition-colors"
                         title="Deletar"
                       >
-                        🗑️ Deletar
+                        Deletar
                       </button>
                     </div>
                   </div>
