@@ -7,18 +7,14 @@ import { useAuthStore } from "../stores/authStore";
 const DEFAULT_BASE = "http://localhost:3001";
 const BASE_URL = (import.meta.env.VITE_API_URL as string) || DEFAULT_BASE;
 
-// Logar baseURL para facilitar debugging em runtime
-console.info("API baseURL:", BASE_URL);
 
 export const api = axios.create({
   baseURL: BASE_URL,
 });
 
-// Debug: logar cada requisição para inspecionar URLs usadas
 api.interceptors.request.use((config) => {
   try {
-    // mostrar método e URL final
-    console.debug("API request:", config.method?.toUpperCase(), config.url, "->", `${BASE_URL}${config.url ?? ""}`);
+    // mostrar método e URL final (logs removidos em produção)
   } catch {
     // ignore
   }
@@ -61,7 +57,7 @@ api.interceptors.request.use(config => {
   if (token && !ehRotaPublica(config.url)) {
     config.headers.Authorization = `Bearer ${token}`;
   } else {
-    // Remover qualquer header Authorization existente se não houver token
+   
     delete config.headers.Authorization;
   }
 
