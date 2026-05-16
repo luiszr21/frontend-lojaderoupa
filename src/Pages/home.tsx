@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../Services/Api";
 import CardProduto from "../components/CardProduto";
@@ -11,7 +10,7 @@ export default function Home() {
   const [buscaInput, setBuscaInput] = useState("");
   const [busca, setBusca] = useState("");
   const [somenteDestaques, setSomenteDestaques] = useState(false);
-  const [status, setStatus] = useState("Conectando ao backend...");
+  const [status, setStatus] = useState("");
   const [produtos, setProdutos] = useState<ListarProdutosResponse>([]);
   const token = useAuthStore((state) => state.token);
   const logout = useAuthStore((state) => state.logout);
@@ -25,22 +24,11 @@ export default function Home() {
         setProdutos(res.data);
         setStatus("");
       })
-      .catch((error: unknown) => {
-        if (axios.isAxiosError(error) && error.response?.status === 500) {
-          setStatus(
-            somenteDestaques
-              ? "Falha no servidor ao carregar destaques. Tente novamente."
-              : "Falha no servidor ao carregar produtos. Tente novamente.",
-          );
-          return;
-        }
-
-        const mensagem =
-          error instanceof Error ? error.message : "Erro ao conectar.";
+        .catch(() => {
         setStatus(
           somenteDestaques
-            ? `Falha na conexão ao carregar destaques: ${mensagem}`
-            : `Falha na conexão: ${mensagem}`,
+            ? "Não foi possível carregar os destaques no momento. Tente novamente."
+            : "Não foi possível carregar os produtos no momento. Tente novamente.",
         );
       });
   }, [somenteDestaques]);

@@ -69,21 +69,7 @@ export default function AdminPropostas() {
   };
 
   // Enviar email
-  const handleEnviarEmail = async (id: string, email: string) => {
-    try {
-      setError(null);
-      setSucesso(null);
-
-      await api.post(`/admin/interacoes/${id}/enviar-email`, {
-        email,
-      });
-
-      setSucesso("Email enviado com sucesso!");
-      await carregarInteracoes();
-    } catch (err) {
-      setError("Erro ao enviar email");
-    }
-  };
+  
 
   // Confirmar interação
   const handleConfirmar = async (id: string) => {
